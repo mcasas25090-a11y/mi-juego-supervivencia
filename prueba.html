@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juego de Supervivencia 2D</title>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: #222;
+    }
+
+    canvas {
+        display: block;
+        margin: auto;
+        background: #4CAF50;
+        border: 3px solid black;
+    }
+</style>
+</head>
+<body>
+
+<canvas id="game" width="800" height="500"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const player = {
+    x: 400,
+    y: 250,
+    size: 25,
+    speed: 4
+};
+
+const keys = {};
+const enemies = [];
+let gameOver = false;
+let score = 0;
+
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+function spawnEnemy() {
+    const side = Math.floor(Math.random() * 4);
+    let x, y;
+
+    if (side === 0) { x = 0; y = Math.random() * canvas.height; }
+    if (side === 1) { x = canvas.width; y = Math.random() * canvas.height; }
+    if (side === 2) { x = Math.random() * canvas.width; y = 0; }
+    if (side === 3) { x = Math.random() * canvas.width; y = canvas.height; }
+
+    enemies.push({
+        x,
+        y,
+        size: 20,
+        speed: 1 + Math.random() * 2
+    });
+}
+
+setInterval(spawnEnemy, 1000);
+
+function update() {
+    if (gameOver) return;
+
+    if (keys["ArrowUp"] || keys["w"]) player.y -= player.speed;
+    if (keys["ArrowDown"] || keys["s"]) player.y += player.speed;
+    if (keys["ArrowLeft"] || keys["a"]) player.x -= player.speed;
+    if (keys["ArrowRight"] || keys["d"]) player.x += player.speed;
+
+    player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
+    player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
+
+    enemies.forEach(enemy => {
+        let dx = player.x - enemy.x;
+        let dy = player.y - enemy.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+
+        enemy.x += (dx / dist) * enemy.speed;
+        enemy.y += (dy / dist) * enemy.speed;
+
+        if (dist < player.size) {
+            gameOver = true;
+        }
+    });
+
+    score += 1;
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "blue";
+    ctx.fillRect(player.x, player.y, player.size, player.size);
+
+    ctx.fillStyle = "red";
+    enemies.forEach(enemy => {
+        ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+    });
+
+    ctx.fillStyle = "white";
+    ctx.font = "20px Arial";
+    ctx.fillText("Tiempo: " + Math.floor(score / 60), 10, 25);
+
+    if (gameOver) {
+        ctx.fillStyle = "black";
+        ctx.font = "40px Arial";
+        ctx.fillText("GAME OVER", 280, 250);
+    }
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
